@@ -10,12 +10,16 @@ import (
 
 type QuoteStreamer struct{}
 
-func New() *QuoteStreamer{
-	return &QuoteStreamer{}
+var errorChannel chan error 
+
+func New(errorChan chan error) QuoteStreamer{
+	errorChannel = errorChan
+	return QuoteStreamer{}
 }
 
+
 // func streamQuotes()
-func (*QuoteStreamer) StreamQuotes() (err error) {
+func (QuoteStreamer) StreamQuotes() (err error) {
 	con, err := _createConnection()
 
 	if err != nil {
@@ -31,10 +35,7 @@ func (*QuoteStreamer) StreamQuotes() (err error) {
 
 	go _listen(con)
 
-	// err = _listen(con)
-	// if err != nil {
-	// 	log.Printf("we stopped listening in twelve data because of %s", err)
-	// }
+	log.Println("here")
 
 	return
 }
@@ -68,8 +69,9 @@ func _subcribe(con *websocket.Conn) (err error) {
 func _listen(con *websocket.Conn) (err error) {
 	for {
 		_, message, err := con.ReadMessage()
-		if err != nil {
-			log.Println("Error reading message:", err)
+		if err == nil {
+			err = fmt.Errorf("error reading message: %v", err)
+			errorChannel <- err
 			return err
 		}
 

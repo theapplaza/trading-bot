@@ -9,25 +9,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type destinatation string
-const (
-	quoteRequest = "marketData.subscribe"
-	quote = "quote"
-)
-
-type subscriptionResponse struct {
-	Event  string `json:"event"`
-	Status string `json:"status"`
-}
-
 type QuoteStreamer struct{}
 
-func New() *QuoteStreamer{
-	return &QuoteStreamer{}
+var errorChannel chan error 
+
+func New(errorChan chan error) QuoteStreamer{
+	errorChannel = errorChan
+	return QuoteStreamer{}
 }
 
-// func streamQuotes()
-func (*QuoteStreamer) StreamQuotes()(err error) {
+func (QuoteStreamer) StreamQuotes()(err error) {
 
 	//ensure that authentication is done
 	if activeSession == nil {
@@ -83,6 +74,7 @@ func _listen(con *websocket.Conn) (err error) {
 		_, message, err := con.ReadMessage()
 		if err != nil {
 			log.Println("Error reading message:", err)
+			// *errorChannel <- err
 			return err
 		}
 

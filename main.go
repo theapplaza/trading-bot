@@ -3,23 +3,25 @@ package main
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"trading-bot/core"
-
 	"trading-bot/vendors/capital"
 	"trading-bot/vendors/twelvedata"
-	// "trading-bot/platform/config"
 )
 
-func main(){
-    fmt.Println("Applaza trading bot with different API for creating and opening orders and fetching data. It integrates with different data providers and platform")
+func main() {
+	fmt.Println("Applaza trading bot integrates with different data providers and platform to monitor and execute orders")
 
-	//@TODO handle graceful shutdown of the listens when error happens
-	quoteStreamers := []core.QuoteStreamer{twelvedata.New(), capital.New()}
+	errorChannel := core.GetErrorChannel()
+	quoteStreamers := []core.QuoteStreamer{
+		twelvedata.New(errorChannel),
+		capital.New(errorChannel),
+	}
 	for _, streamer := range quoteStreamers {
-		if err := streamer.StreamQuotes(); err != nil {
-			log.Fatal(err)
+		if err := streamer.StreamQuotes(); err != nil{
+			log.Printf("cannot start streaming quotes for %s", reflect.TypeOf(streamer).Name())
 		}
 	}
 
-	select {}
+	core.HandleErrors()
 }
