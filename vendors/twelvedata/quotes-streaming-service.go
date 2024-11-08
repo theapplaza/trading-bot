@@ -10,9 +10,9 @@ import (
 
 type QuoteStreamer struct{}
 
-var errorChannel chan error 
+var errorChannel chan<- error 
 
-func New(errorChan chan error) QuoteStreamer{
+func New(errorChan chan<- error) QuoteStreamer{
 	errorChannel = errorChan
 	return QuoteStreamer{}
 }
@@ -20,28 +20,31 @@ func New(errorChan chan error) QuoteStreamer{
 
 // func streamQuotes()
 func (QuoteStreamer) StreamQuotes() (err error) {
+
+	defer func(){
+		if err  != nil {
+			errorChannel <- err
+		}
+	}()
+
 	con, err := _createConnection()
 
 	if err != nil {
 		return
 	}
 
-	// defer con.Close()
-
 	err = _subcribe(con)
 	if err != nil {
 		return
 	}
-
+	
 	go _listen(con)
-
-	log.Println("here")
 
 	return
 }
 
 func _createConnection() (con *websocket.Conn, err error) {
-	url := fmt.Sprintf("wss://%v/quotes/price?apikey=%v", config.DataStreamUrl, config.ApiKey)
+	url := fmt.Sprintf("wss://%v/quotes/price?apikey=%v", activeConfig.DataStreamUrl, activeConfig.ApiKey)
 	con, _, err = websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		err = fmt.Errorf("error connecting to data streaming endpoint %s", err)
@@ -54,7 +57,7 @@ func _subcribe(con *websocket.Conn) (err error) {
 	request := map[string]interface{}{
 		"action": "subscribe",
 		"params": map[string]interface{}{
-			"symbols": config.Instruments,
+			"symbols": activeConfig.Instruments,
 		},
 	}
 
@@ -67,37 +70,47 @@ func _subcribe(con *websocket.Conn) (err error) {
 }
 
 func _listen(con *websocket.Conn) (err error) {
+
+	defer func(){
+		if err  != nil {
+			errorChannel <- err
+		}
+		con.Close()
+	}()
+	
+
 	for {
 		_, message, err := con.ReadMessage()
-		if err == nil {
+		if err != nil {
 			err = fmt.Errorf("error reading message: %v", err)
-			errorChannel <- err
 			return err
 		}
 
 		var response map[string]interface{}
 		if err := json.Unmarshal(message, &response); err != nil {
-			log.Println("Error unmarshalling response:", err)
+			errorChannel <- err
 			continue
 		}
 		// Handle the response based on the destination field
 		switch response["event"] {
 		case "connection":
-			return fmt.Errorf("issue with connection request: %s", response["messages"])
+			 return fmt.Errorf("issue with connection request: %s", response["messages"])
 		case "subscribe-status":
 			_handleSubscriptionResponse(response)
 		case "price":
 			_handleQuoteUpdateResponse(response)
 		default:
-			log.Println("Unhandled message:", response)
+			return fmt.Errorf("unhandled message: %v", response)
 		}
+
+
 	}
 }
 
 func _handleSubscriptionResponse(response map[string]interface{}) {
 	status := response["status"].(string)
 	if status != "ok" {
-		log.Println("Subscription failed:", response)
+		errorChannel <- fmt.Errorf("subscription failed: %v", response)
 	}
 }
 

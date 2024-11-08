@@ -7,20 +7,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
+type config struct {
 	ApiBaseUrl    string
 	ApiKey        string
 	DataStreamUrl string
 	Instruments   string
 }
 
-var config *Config
+var activeConfig *config
 
 func init() {
-	config = loadConfig()
+	activeConfig = loadConfig()
 }
 
-func loadConfig() *Config {
+func loadConfig() *config {
 
 	err := godotenv.Load(".env")
 
@@ -28,7 +28,7 @@ func loadConfig() *Config {
 		log.Fatalf("Error loading .env file")
 	}
 
-	return &Config{
+	return &config{
 		ApiBaseUrl:    os.Getenv("TWELVE_DATA_WS_URL"),
 		ApiKey:        os.Getenv("TWELVE_DATA_API_KEY"),
 		Instruments:   os.Getenv("INSTRUMENTS"),

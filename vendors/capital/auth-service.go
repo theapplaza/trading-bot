@@ -35,17 +35,17 @@ func authenticate() (err error) {
 
 func _setupReq() (req *http.Request, err error) {
 	reqBody, _ := json.Marshal(map[string]string{
-		"identifier": config.ApiKeyUser,
-		"password":   config.ApiKeyPassword,
+		"identifier": activeConfig.ApiKeyUser,
+		"password":   activeConfig.ApiKeyPassword,
 	})
 
-	req, err = http.NewRequest("POST", fmt.Sprintf("%s/session", config.ApiBaseUrl), bytes.NewBuffer(reqBody))
+	req, err = http.NewRequest("POST", fmt.Sprintf("%s/session", activeConfig.ApiBaseUrl), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("X-CAP-API-KEY", config.ApiKey)
+	req.Header.Add("X-CAP-API-KEY", activeConfig.ApiKey)
 	return
 }
 

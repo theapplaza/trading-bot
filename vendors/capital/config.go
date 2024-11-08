@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
+type config struct {
 	ApiBaseUrl       string
 	ApiKey           string
 	ApiKeyPassword   string
@@ -18,13 +18,13 @@ type Config struct {
 	TradingAccountId string
 }
 
-var config *Config
+var activeConfig *config
 
 func init() {
-	config = loadConfig()
+	activeConfig = loadConfig()
 }
 
-func loadConfig() *Config {
+func loadConfig() *config {
 
 	err := godotenv.Load(".env")
 
@@ -32,7 +32,7 @@ func loadConfig() *Config {
 		log.Fatalf("Error loading .env file")
 	}
 
-	return &Config{
+	return &config{
 		ApiBaseUrl:       os.Getenv("CAPITAL_API_URL"),
 		ApiKey:           os.Getenv("CAPITAL_API_KEY"),
 		ApiKeyPassword:   os.Getenv("CAPITAL_API_KEY_PASSWORD"),

@@ -11,14 +11,20 @@ import (
 
 type QuoteStreamer struct{}
 
-var errorChannel chan error 
+var errorChannel chan error
 
-func New(errorChan chan error) QuoteStreamer{
+func New(errorChan chan error) QuoteStreamer {
 	errorChannel = errorChan
 	return QuoteStreamer{}
 }
 
-func (QuoteStreamer) StreamQuotes()(err error) {
+func (QuoteStreamer) StreamQuotes() (err error) {
+
+	defer func() {
+		if err != nil {
+			errorChannel <- err
+		}
+	}()
 
 	//ensure that authentication is done
 	if activeSession == nil {
@@ -30,8 +36,6 @@ func (QuoteStreamer) StreamQuotes()(err error) {
 	if err != nil {
 		return
 	}
-
-	defer con.Close()
 
 	err = _subcribe(con)
 	if err != nil {
@@ -65,11 +69,19 @@ func _subcribe(con *websocket.Conn) (err error) {
 	}
 
 	// Send subscription request
-	err = con.WriteJSON(request); 
+	err = con.WriteJSON(request)
 	return
 }
 
 func _listen(con *websocket.Conn) (err error) {
+
+	defer func(){
+		if err  != nil {
+			errorChannel <- err
+		}
+		con.Close()
+	}()
+
 	for {
 		_, message, err := con.ReadMessage()
 		if err != nil {
@@ -104,12 +116,12 @@ func _handleSubscriptionResponse(response map[string]interface{}) {
 }
 
 func _handleQuoteUpdateResponse(response map[string]interface{}) {
-    payload := response["payload"].(map[string]interface{})
+	payload := response["payload"].(map[string]interface{})
 
-    epic := payload["epic"].(string)
-    bid := payload["bid"].(float64)
-    ofr := payload["ofr"].(float64)
-    timestamp := payload["timestamp"].(float64)
+	epic := payload["epic"].(string)
+	bid := payload["bid"].(float64)
+	ofr := payload["ofr"].(float64)
+	timestamp := payload["timestamp"].(float64)
 
-    log.Printf("Capital: Price update for %s - Bid: %f, Offer: %.2f, Timestamp: %d", epic, bid, ofr, int64(timestamp))
+	log.Printf("Capital: Price update for %s - Bid: %f, Offer: %.2f, Timestamp: %d", epic, bid, ofr, int64(timestamp))
 }

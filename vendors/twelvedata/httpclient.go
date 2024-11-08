@@ -1,6 +1,0 @@
-package twelvedata
-
-
-func GetHttpClient() {
-	
-}

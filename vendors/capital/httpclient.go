@@ -1,6 +1,0 @@
-package capital
-
-
-func GetHttpClient() {
-	
-}
