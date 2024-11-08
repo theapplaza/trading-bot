@@ -4,7 +4,11 @@ import (
 	"fmt"
 )
 
-func Start() {
+/**
+ * This file is used solely for testing during development of this vendor, so that we do not break other vendors by modifying central main func
+ */
+
+func main() {
 	//most important thing is authentication
 	if err := authenticate(); err != nil {
 		fmt.Println(err)
