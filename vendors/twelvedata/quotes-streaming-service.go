@@ -1,46 +1,55 @@
-package capital
+package twelvedata
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 
 	"github.com/gorilla/websocket"
 )
 
-type subscriptionResponse struct {
-	Event  string `json:"event"`
-	Status string `json:"status"`
+// type destinatation string
+
+// const (
+// 	quoteRequest = "marketData.subscribe"
+// 	quote        = "quote"
+// )
+
+// type subscriptionResponse struct {
+// 	Event  string `json:"event"`
+// 	Status string `json:"status"`
+// }
+
+type QuoteStreamer struct {
 }
 
-func streamQuotes() (err error) {
-
+// func streamQuotes()
+func (stream QuoteStreamer) StreamQuotes() (err error) {
 	con, err := _createConnection()
-	fmt.Println("Got connection")
 
 	if err != nil {
 		return
 	}
 
-	defer con.Close()
-
-	fmt.Println("About to subcribe to market place")
+	// defer con.Close()
 
 	err = _subcribe(con)
 	if err != nil {
 		return
 	}
 
-	log.Println("data subscription request accepted and will start processing updates as they happen")
+	go _listen(con)
 
-	_listen(con)
+	// err = _listen(con)
+	// if err != nil {
+	// 	log.Printf("we stopped listening in twelve data because of %s", err)
+	// }
 
 	return
 }
 
 func _createConnection() (con *websocket.Conn, err error) {
-	url := fmt.Sprintf("%s%s", activeSession.StreamingHost, "connect")
+	url := fmt.Sprintf("wss://%v/quotes/price?apikey=%v", config.DataStreamUrl, config.ApiKey)
 	con, _, err = websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		err = fmt.Errorf("error connecting to data streaming endpoint %s", err)
@@ -51,12 +60,9 @@ func _createConnection() (con *websocket.Conn, err error) {
 func _subcribe(con *websocket.Conn) (err error) {
 	//subcribe to price update
 	request := map[string]interface{}{
-		"destination":   "marketData.subscribe",
-		"correlationId": rand.Int(),
-		"cst":           activeSession.cst,
-		"securityToken": activeSession.securitytoken,
-		"payload": map[string]interface{}{
-			"epics": []string{"OIL_CRUDE"},
+		"action": "subscribe",
+		"params": map[string]interface{}{
+			"symbols": config.Instruments,
 		},
 	}
 
@@ -64,19 +70,16 @@ func _subcribe(con *websocket.Conn) (err error) {
 	if err = con.WriteJSON(request); err != nil {
 		return
 	}
-	log.Println("data subscription request sent, we are waiting for response")
-
-	_listen(con)
 
 	return
 }
 
-func _listen(con *websocket.Conn) {
+func _listen(con *websocket.Conn) (err error) {
 	for {
 		_, message, err := con.ReadMessage()
 		if err != nil {
 			log.Println("Error reading message:", err)
-			return
+			return err
 		}
 
 		var response map[string]interface{}
@@ -84,12 +87,13 @@ func _listen(con *websocket.Conn) {
 			log.Println("Error unmarshalling response:", err)
 			continue
 		}
-
 		// Handle the response based on the destination field
-		switch response["destination"] {
-		case "marketData.subscribe":
+		switch response["event"] {
+		case "connection":
+			return fmt.Errorf("issue with connection request: %s", response["messages"])
+		case "subscribe-status":
 			_handleSubscriptionResponse(response)
-		case "quote":
+		case "price":
 			_handleQuoteUpdateResponse(response)
 		default:
 			log.Println("Unhandled message:", response)
@@ -99,20 +103,17 @@ func _listen(con *websocket.Conn) {
 
 func _handleSubscriptionResponse(response map[string]interface{}) {
 	status := response["status"].(string)
-	if status == "OK" {
+	if status == "ok" {
 		log.Println("Subscription confirmed:", response)
 	} else {
 		log.Println("Subscription failed:", response)
 	}
 }
 
-func _handleQuoteUpdateResponse(response map[string]interface{}) {
-    payload := response["payload"].(map[string]interface{})
+func _handleQuoteUpdateResponse(payload map[string]interface{}) {
+	epic := payload["symbol"].(string)
+	price := payload["price"].(float64)
+	timestamp := payload["timestamp"].(float64)
 
-    epic := payload["epic"].(string)
-    bid := payload["bid"].(float64)
-    ofr := payload["ofr"].(float64)
-    timestamp := payload["timestamp"].(float64)
-
-    log.Printf("Price update for %s - Bid: %.2f, Offer: %.2f, Timestamp: %d", epic, bid, ofr, int64(timestamp))
+	log.Printf("TwelveData: Price update for %s - Price: %f, Timestamp: %d", epic, price, int64(timestamp))
 }
