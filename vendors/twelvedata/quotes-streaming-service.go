@@ -8,23 +8,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// type destinatation string
+type QuoteStreamer struct{}
 
-// const (
-// 	quoteRequest = "marketData.subscribe"
-// 	quote        = "quote"
-// )
-
-// type subscriptionResponse struct {
-// 	Event  string `json:"event"`
-// 	Status string `json:"status"`
-// }
-
-type QuoteStreamer struct {
+func New() *QuoteStreamer{
+	return &QuoteStreamer{}
 }
 
 // func streamQuotes()
-func (stream QuoteStreamer) StreamQuotes() (err error) {
+func (*QuoteStreamer) StreamQuotes() (err error) {
 	con, err := _createConnection()
 
 	if err != nil {
@@ -103,9 +94,7 @@ func _listen(con *websocket.Conn) (err error) {
 
 func _handleSubscriptionResponse(response map[string]interface{}) {
 	status := response["status"].(string)
-	if status == "ok" {
-		log.Println("Subscription confirmed:", response)
-	} else {
+	if status != "ok" {
 		log.Println("Subscription failed:", response)
 	}
 }

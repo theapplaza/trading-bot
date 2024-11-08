@@ -20,12 +20,14 @@ type subscriptionResponse struct {
 	Status string `json:"status"`
 }
 
-type QuoteStreamer struct{
+type QuoteStreamer struct{}
 
+func New() *QuoteStreamer{
+	return &QuoteStreamer{}
 }
 
 // func streamQuotes()
-func (stream QuoteStreamer) StreamQuotes()(err error) {
+func (*QuoteStreamer) StreamQuotes()(err error) {
 
 	//ensure that authentication is done
 	if activeSession == nil {
