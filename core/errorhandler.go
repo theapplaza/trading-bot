@@ -7,27 +7,24 @@ import (
 	"syscall"
 )
 
-var errorChannel = make(chan error, 10)
+// Global channels
+var (
+	errorChannel = make(chan error, 10)
+)
 
-func HandleErrors() {
-    go func() {
-        // Listen for shutdown signals in a separate goroutine.
-        sigChan := make(chan os.Signal, 1)
-        signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-        <-sigChan // Wait for an OS signal
-        log.Println("Received shutdown signal. Closing error channel.")
-        close(errorChannel) // Closing the channel triggers all listeners to stop
-    }()
+// HandleErrorsAndShutdown listens for errors or signals, then initiates shutdown.
+func HandleErrorsAndShutdown() {
 
-    go func() {
-        for err := range errorChannel {
-            if err != nil {
-                log.Println("Error received:", err)
-            }
-        }
-    }()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigChan
+	log.Printf("Received signal: %v. Initiating shutdown...", sig)
+
+	// Wait for all streamers to finish
+	streamersGroup.Wait()
+	log.Println("Program has exited gracefully.")
 }
 
 func GetErrorChannel() chan error {
-    return errorChannel
+	return errorChannel
 }

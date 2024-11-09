@@ -31,7 +31,7 @@ func loadConfig() *config {
 	return &config{
 		ApiBaseUrl:    os.Getenv("TWELVE_DATA_WS_URL"),
 		ApiKey:        os.Getenv("TWELVE_DATA_API_KEY"),
-		Instruments:   os.Getenv("INSTRUMENTS"),
+		Instruments:   os.Getenv("TWELVE_DATA_INSTRUMENTS"),
 		DataStreamUrl: os.Getenv("TWELVE_DATA_WS_URL"),
 	}
 

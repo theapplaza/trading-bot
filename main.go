@@ -6,13 +6,13 @@ import (
 	"trading-bot/vendors/twelvedata"
 )
 
-func main() {
-	// Start handling errors
-	core.HandleErrors()
 
-	twelvedata.New(core.GetErrorChannel()).StreamQuotes()
-	capital.New(core.GetErrorChannel()).StreamQuotes()
-	
-	// Keep the main function running
-	select {}
+func main() {
+
+	vendors := []core.QuoteStreamer{twelvedata.New(), capital.New()}
+	for _, vendor := range vendors {
+		core.Inject(vendor)
+	}
+
+    core.HandleErrorsAndShutdown()
 }

@@ -38,7 +38,7 @@ func loadConfig() *config {
 		ApiKeyPassword:   os.Getenv("CAPITAL_API_KEY_PASSWORD"),
 		ApiKeyUser:       os.Getenv("CAPITAL_IDENTIFIER"),
 		TradingAccountId: os.Getenv("CAPITAL_PRIMARY_ACCOUNT_ID"),
-		Instruments:      os.Getenv("INSTRUMENTS"),
+		Instruments:      os.Getenv("CAPITAL_INSTRUMENTS"),
 	}
 
 }

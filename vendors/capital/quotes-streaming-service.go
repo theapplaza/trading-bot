@@ -5,58 +5,38 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
 
-type QuoteStreamer struct{}
+type QuoteStreamer struct {
+}
 
-var errorChannel chan error
-
-func New(errorChan chan error) QuoteStreamer {
-	errorChannel = errorChan
+func New() QuoteStreamer {
 	return QuoteStreamer{}
 }
 
-func (QuoteStreamer) StreamQuotes() (err error) {
+func(s QuoteStreamer) GetName() string {
+	return "Capital"
+}
 
-	defer func() {
-		if err != nil {
-			errorChannel <- err
-		}
-	}()
+func (s QuoteStreamer) StreamQuotes() (err error) {
 
 	//ensure that authentication is done
 	if activeSession == nil {
-		authenticate()
+		if err = authenticate(); err != nil {
+			return err
+		}
 	}
 
-	con, err := _createConnection()
-
-	if err != nil {
-		return
-	}
-
-	err = _subcribe(con)
-	if err != nil {
-		return
-	}
-
-	_listen(con)
-
-	return
-}
-
-func _createConnection() (con *websocket.Conn, err error) {
 	url := fmt.Sprintf("%s%s", activeSession.StreamingHost, "connect")
-	con, _, err = websocket.DefaultDialer.Dial(url, nil)
+	con, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		err = fmt.Errorf("error connecting to data streaming endpoint %s", err)
+		return err
 	}
-	return
-}
+	defer con.Close()
 
-func _subcribe(con *websocket.Conn) (err error) {
 	//subcribe to price update
 	request := map[string]interface{}{
 		"destination":   "marketData.subscribe",
@@ -64,29 +44,21 @@ func _subcribe(con *websocket.Conn) (err error) {
 		"cst":           activeSession.cst,
 		"securityToken": activeSession.securitytoken,
 		"payload": map[string]interface{}{
-			"epics": []string{"OIL_CRUDE"},
+			"epics": strings.Split(activeConfig.Instruments, ","),
 		},
 	}
-
-	// Send subscription request
 	err = con.WriteJSON(request)
-	return
+
+	return s.listen(con)
 }
 
-func _listen(con *websocket.Conn) (err error) {
+func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 
-	defer func(){
-		if err  != nil {
-			errorChannel <- err
-		}
-		con.Close()
-	}()
+	defer con.Close()
 
 	for {
 		_, message, err := con.ReadMessage()
 		if err != nil {
-			log.Println("Error reading message:", err)
-			// *errorChannel <- err
 			return err
 		}
 
@@ -99,23 +71,24 @@ func _listen(con *websocket.Conn) (err error) {
 		// Handle the response based on the destination field
 		switch response["destination"] {
 		case "marketData.subscribe":
-			_handleSubscriptionResponse(response)
+			s.handleSubscriptionResponse(response)
 		case "quote":
-			_handleQuoteUpdateResponse(response)
+			s.handleQuoteUpdateResponse(response)
 		default:
-			log.Println("Unhandled message:", response)
+			return fmt.Errorf("unhandled message: %v", response)
 		}
 	}
 }
 
-func _handleSubscriptionResponse(response map[string]interface{}) {
+func (s QuoteStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
 	status := response["status"].(string)
 	if status != "OK" {
-		log.Println("Subscription failed:", response)
+		return fmt.Errorf("subscription failed: %v", response)
 	}
+	return nil
 }
 
-func _handleQuoteUpdateResponse(response map[string]interface{}) {
+func (s QuoteStreamer) handleQuoteUpdateResponse(response map[string]interface{}) {
 	payload := response["payload"].(map[string]interface{})
 
 	epic := payload["epic"].(string)
