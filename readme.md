@@ -9,3 +9,5 @@ Each vendor folder has main file that is used solely for testing during developm
 
 @TODO
 Include ability to handle multiple instrument for each stream
+Unit tests
+Integration tests

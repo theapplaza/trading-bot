@@ -55,7 +55,7 @@ func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 
 		var response map[string]interface{}
 		if err := json.Unmarshal(message, &response); err != nil {
-			log.Println("Error unmarshalling response:", err)
+			log.Println("error unmarshalling response:", err)
 			continue
 		}
 

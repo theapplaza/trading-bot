@@ -8,7 +8,6 @@ import (
 
 
 func main() {
-
 	vendors := []core.QuoteStreamer{twelvedata.New(), capital.New()}
 	for _, vendor := range vendors {
 		core.Inject(vendor)
