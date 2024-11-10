@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	. "trading-bot/common/models"
 
 	"github.com/gorilla/websocket"
 )
 
 type QuoteStreamer struct {
-	url string
-	ctx context.Context
+	url        string
+	ctx        context.Context
+	quotesChan chan PriceQuote
 }
 
 func New(ctx context.Context) QuoteStreamer {
@@ -27,7 +29,9 @@ func (s QuoteStreamer) GetName() string {
 	return "Twelve-Data"
 }
 
-func (s QuoteStreamer) StreamQuotes() (err error) {
+func (s QuoteStreamer) StreamQuotes(ch chan PriceQuote) (err error) {
+
+	s.quotesChan = ch
 
 	con, _, err := websocket.DefaultDialer.Dial(s.url, nil)
 	if err != nil {
@@ -49,7 +53,7 @@ func (s QuoteStreamer) StreamQuotes() (err error) {
 func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 
 	defer con.Close()
-	
+
 	for {
 
 		select {
@@ -96,6 +100,15 @@ func (s QuoteStreamer) handleQuoteUpdateResponse(payload map[string]interface{})
 	epic := payload["symbol"].(string)
 	price := payload["price"].(float64)
 	timestamp := payload["timestamp"].(float64)
+
+	quote := PriceQuote{
+		Price: price,
+		Symbol: Symbol{
+			Name:   epic,
+			Ticker: epic,
+		},
+	}
+	s.quotesChan <- quote
 
 	log.Printf("TwelveData: Price update for %s - Price: %f, Timestamp: %d", epic, price, int64(timestamp))
 }

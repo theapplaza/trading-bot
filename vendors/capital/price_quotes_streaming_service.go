@@ -7,12 +7,14 @@ import (
 	"log"
 	"math/rand"
 	"strings"
+	. "trading-bot/common/models"
 
 	"github.com/gorilla/websocket"
 )
 
 type QuoteStreamer struct {
-	ctx context.Context
+	ctx        context.Context
+	quotesChan chan PriceQuote
 }
 
 func New(ctx context.Context) QuoteStreamer {
@@ -25,7 +27,9 @@ func (s QuoteStreamer) GetName() string {
 	return "Capital"
 }
 
-func (s QuoteStreamer) StreamQuotes() (err error) {
+func (s QuoteStreamer) StreamQuotes(ch chan PriceQuote) (err error) {
+	
+	s.quotesChan = ch
 
 	//ensure that authentication is done
 	if activeSession == nil {
@@ -54,6 +58,10 @@ func (s QuoteStreamer) StreamQuotes() (err error) {
 	err = con.WriteJSON(request)
 
 	return s.listen(con)
+}
+
+func (s QuoteStreamer) PublishQuote(PriceQuote) error {
+	return nil
 }
 
 func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
@@ -118,6 +126,16 @@ func (s QuoteStreamer) handleQuoteUpdateResponse(response map[string]interface{}
 	bid := payload["bid"].(float64)
 	ofr := payload["ofr"].(float64)
 	timestamp := payload["timestamp"].(float64)
+
+	quote := PriceQuote{
+		Price: bid,
+		Symbol: Symbol{
+			Name:   epic,
+			Ticker: epic,
+		},
+	}
+
+	s.quotesChan <- quote
 
 	log.Printf("Capital: Price update for %s - Bid: %f, Offer: %.2f, Timestamp: %d", epic, bid, ofr, int64(timestamp))
 }

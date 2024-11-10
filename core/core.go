@@ -1,25 +1,40 @@
 package core
 
 import (
-	"context"
 	"log"
 	"sync"
+	. "trading-bot/common/models"
 )
 
 type QuoteStreamer interface {
 	GetName() string
-	StreamQuotes() error
+	StreamQuotes(chan PriceQuote) error
 }
 
-var streamersGroup sync.WaitGroup
 
-func Inject(ctx context.Context, streamer QuoteStreamer) {
-	streamersGroup.Add(1)
+var (
+    streamerGroup sync.WaitGroup
+    quoteChannel  = make(chan PriceQuote, 100) // Buffered channel to avoid blocking
+
+)
+
+func Inject(streamer QuoteStreamer) {
+	streamerGroup.Add(1)
 	go func() {
-		defer streamersGroup.Done()
-		if err := streamer.StreamQuotes(); err != nil {
+		defer streamerGroup.Done()
+		if err := streamer.StreamQuotes(quoteChannel); err != nil {
 			log.Printf("[%s] Go routine returned with an error, so it has stopped", streamer.GetName())
 			log.Printf("[%s] Error received - %v", streamer.GetName(), err)
 		}
 	}()
+
+}
+
+func ProcessQuotes() {
+    go func() {
+        for quote := range quoteChannel {
+            log.Printf("Received quote: %v", quote)
+            // Process the quote as needed
+        }
+    }()
 }
