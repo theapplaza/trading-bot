@@ -1,6 +1,7 @@
 package capital
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,13 +12,16 @@ import (
 )
 
 type QuoteStreamer struct {
+	ctx context.Context
 }
 
-func New() QuoteStreamer {
-	return QuoteStreamer{}
+func New(ctx context.Context) QuoteStreamer {
+	return QuoteStreamer{
+		ctx: ctx,
+	}
 }
 
-func(s QuoteStreamer) GetName() string {
+func (s QuoteStreamer) GetName() string {
 	return "Capital"
 }
 
@@ -57,25 +61,33 @@ func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 	defer con.Close()
 
 	for {
-		_, message, err := con.ReadMessage()
-		if err != nil {
-			return err
-		}
 
-		var response map[string]interface{}
-		if err := json.Unmarshal(message, &response); err != nil {
-			log.Println("Error unmarshalling response:", err)
-			continue
-		}
-
-		// Handle the response based on the destination field
-		switch response["destination"] {
-		case "marketData.subscribe":
-			s.handleSubscriptionResponse(response)
-		case "quote":
-			s.handleQuoteUpdateResponse(response)
+		select {
+		case <-s.ctx.Done():
+			log.Println("shutting down quote streaming due to context cancellation")
+			return nil
 		default:
-			return fmt.Errorf("unhandled message: %v", response)
+
+			_, message, err := con.ReadMessage()
+			if err != nil {
+				return err
+			}
+
+			var response map[string]interface{}
+			if err := json.Unmarshal(message, &response); err != nil {
+				log.Println("Error unmarshalling response:", err)
+				continue
+			}
+
+			// Handle the response based on the destination field
+			switch response["destination"] {
+			case "marketData.subscribe":
+				s.handleSubscriptionResponse(response)
+			case "quote":
+				s.handleQuoteUpdateResponse(response)
+			default:
+				return fmt.Errorf("unhandled message: %v", response)
+			}
 		}
 	}
 }

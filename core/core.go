@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"log"
 	"sync"
 )
@@ -12,7 +13,7 @@ type QuoteStreamer interface {
 
 var streamersGroup sync.WaitGroup
 
-func Inject(streamer QuoteStreamer) {
+func Inject(ctx context.Context, streamer QuoteStreamer) {
 	streamersGroup.Add(1)
 	go func() {
 		defer streamersGroup.Done()

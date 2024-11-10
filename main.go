@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"trading-bot/core"
 	"trading-bot/vendors/capital"
 	"trading-bot/vendors/twelvedata"
@@ -8,10 +9,13 @@ import (
 
 
 func main() {
-	vendors := []core.QuoteStreamer{twelvedata.New(), capital.New()}
+	ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+	vendors := []core.QuoteStreamer{twelvedata.New(ctx), capital.New(ctx)}
 	for _, vendor := range vendors {
-		core.Inject(vendor)
+		core.Inject(ctx, vendor)
 	}
 
-    core.HandleErrorsAndShutdown()
+    core.HandleErrorsAndShutdown(cancel)
 }

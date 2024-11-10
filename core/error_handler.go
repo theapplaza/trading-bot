@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -13,12 +14,14 @@ var (
 )
 
 // HandleErrorsAndShutdown listens for errors or signals, then initiates shutdown.
-func HandleErrorsAndShutdown() {
+func HandleErrorsAndShutdown(cancel context.CancelFunc) {
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigChan
 	log.Printf("Received signal: %v. Initiating shutdown...", sig)
+
+	cancel() //signals all goroutines to stop
 
 	// Wait for all streamers to finish
 	streamersGroup.Wait()

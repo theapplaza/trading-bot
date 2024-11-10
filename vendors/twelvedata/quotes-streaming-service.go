@@ -1,6 +1,7 @@
 package twelvedata
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,17 +11,19 @@ import (
 
 type QuoteStreamer struct {
 	url string
+	ctx context.Context
 }
 
-func New() QuoteStreamer {
+func New(ctx context.Context) QuoteStreamer {
 	url := fmt.Sprintf("wss://%v/quotes/price?apikey=%v", activeConfig.DataStreamUrl, activeConfig.ApiKey)
 
 	return QuoteStreamer{
 		url: url,
+		ctx: ctx,
 	}
 }
 
-func(s QuoteStreamer) GetName() string {
+func (s QuoteStreamer) GetName() string {
 	return "Twelve-Data"
 }
 
@@ -48,31 +51,37 @@ func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 	defer con.Close()
 
 	for {
-		_, message, err := con.ReadMessage()
-		if err != nil {
-			return err
-		}
 
-		var response map[string]interface{}
-		if err := json.Unmarshal(message, &response); err != nil {
-			log.Println("error unmarshalling response:", err)
-			continue
-		}
-
-		// Handle the response based on the destination field
-		switch response["event"] {
-		case "connection":
-			return err
-		case "subscribe-status":
-			if err := s.handleSubscriptionResponse(response); err != nil {
+		select {
+		case <-s.ctx.Done():
+			log.Println("shutting down quote streaming due to context cancellation")
+			return nil
+		default:
+			_, message, err := con.ReadMessage()
+			if err != nil {
 				return err
 			}
-		case "price":
-			s.handleQuoteUpdateResponse(response)
-		default:
-			return fmt.Errorf("unhandled message: %v", response)
-		}
 
+			var response map[string]interface{}
+			if err := json.Unmarshal(message, &response); err != nil {
+				log.Println("error unmarshalling response:", err)
+				continue
+			}
+
+			// Handle the response based on the destination field
+			switch response["event"] {
+			case "connection":
+				return err
+			case "subscribe-status":
+				if err := s.handleSubscriptionResponse(response); err != nil {
+					return err
+				}
+			case "price":
+				s.handleQuoteUpdateResponse(response)
+			default:
+				return fmt.Errorf("unhandled message: %v", response)
+			}
+		}
 	}
 }
 
