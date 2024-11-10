@@ -16,8 +16,8 @@ type CapitalStreamer struct {
 	common.BaseQuoteStreamer
 }
 
-func New(ctx context.Context) CapitalStreamer {
-	return CapitalStreamer{
+func New(ctx context.Context) *CapitalStreamer {
+	return &CapitalStreamer{
 		BaseQuoteStreamer:common.BaseQuoteStreamer{
 			Name: "Capital",
 			Ctx: ctx,
@@ -25,7 +25,7 @@ func New(ctx context.Context) CapitalStreamer {
 	}
 }
 
-func (s CapitalStreamer) StreamQuotes() (err error) {
+func (s *CapitalStreamer) StreamQuotes() (err error) {
 	
 	//ensure that authentication is done
 	if activeSession == nil {
@@ -56,7 +56,7 @@ func (s CapitalStreamer) StreamQuotes() (err error) {
 	return s.listen(con)
 }
 
-func (s CapitalStreamer) listen(con *websocket.Conn) (err error) {
+func (s *CapitalStreamer) listen(con *websocket.Conn) (err error) {
 
 	defer con.Close()
 
@@ -92,7 +92,7 @@ func (s CapitalStreamer) listen(con *websocket.Conn) (err error) {
 	}
 }
 
-func (s CapitalStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
+func (s *CapitalStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
 	status := response["status"].(string)
 	if status != "OK" {
 		return fmt.Errorf("subscription error: %v", response)
@@ -111,7 +111,7 @@ func (s CapitalStreamer) handleSubscriptionResponse(response map[string]interfac
 	return nil
 }
 
-func (s CapitalStreamer) handleQuoteUpdateResponse(response map[string]interface{}) {
+func (s *CapitalStreamer) handleQuoteUpdateResponse(response map[string]interface{}) {
 	payload := response["payload"].(map[string]interface{})
 
 	epic := payload["epic"].(string)

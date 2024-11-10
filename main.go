@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"trading-bot/common"
 	"trading-bot/core"
+
 	"trading-bot/vendors/capital"
 	"trading-bot/vendors/twelvedata"
 )
@@ -13,7 +15,7 @@ func main() {
 
 	core.ProcessQuotes()
 
-	vendors := []core.QuoteStreamer{
+	vendors := []common.QuoteStreamer{
 		twelvedata.New(ctx),
 		capital.New(ctx),
 	}

@@ -15,10 +15,10 @@ type TwelveDataStreamer struct {
 	url string
 }
 
-func New(ctx context.Context) TwelveDataStreamer {
+func New(ctx context.Context) *TwelveDataStreamer {
 	_url := fmt.Sprintf("wss://%v/quotes/price?apikey=%v", activeConfig.DataStreamUrl, activeConfig.ApiKey)
 
-	return TwelveDataStreamer{
+	return &TwelveDataStreamer{
 		BaseQuoteStreamer: common.BaseQuoteStreamer{
 			Name: "TwelveData",
 			Ctx: ctx,
@@ -28,7 +28,7 @@ func New(ctx context.Context) TwelveDataStreamer {
 }
 
 
-func (s TwelveDataStreamer) StreamQuotes() (err error) {
+func (s *TwelveDataStreamer) StreamQuotes() (err error) {
 
 	con, _, err := websocket.DefaultDialer.Dial(s.url, nil)
 	if err != nil {
@@ -47,7 +47,7 @@ func (s TwelveDataStreamer) StreamQuotes() (err error) {
 	return s.listen(con)
 }
 
-func (s TwelveDataStreamer) listen(con *websocket.Conn) (err error) {
+func (s *TwelveDataStreamer) listen(con *websocket.Conn) (err error) {
 
 	defer con.Close()
 
@@ -85,7 +85,7 @@ func (s TwelveDataStreamer) listen(con *websocket.Conn) (err error) {
 	}
 }
 
-func (s TwelveDataStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
+func (s *TwelveDataStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
 	status := response["status"].(string)
 	if status != "ok" {
 		return fmt.Errorf("subscription failed: %v", response)
@@ -93,7 +93,7 @@ func (s TwelveDataStreamer) handleSubscriptionResponse(response map[string]inter
 	return nil
 }
 
-func (s TwelveDataStreamer) handleQuoteUpdateResponse(payload map[string]interface{}) {
+func (s *TwelveDataStreamer) handleQuoteUpdateResponse(payload map[string]interface{}) {
 	epic := payload["symbol"].(string)
 	price := payload["price"].(float64)
 	timestamp := payload["timestamp"].(float64)

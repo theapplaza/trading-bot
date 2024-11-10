@@ -12,22 +12,20 @@ type BaseQuoteStreamer struct {
 	Ctx        context.Context
 }
 
-func (s BaseQuoteStreamer) GetName() string {
+func (s *BaseQuoteStreamer) GetName() string {
 	return s.Name
 }
 
-func (s BaseQuoteStreamer) SetQuotesChannel(c chan PriceQuote) {
+func (s *BaseQuoteStreamer) SetQuotesChannel(c chan PriceQuote) {
 	s.QuotesChan = c
 }
 
 // StreamQuotes is a placeholder method to be overridden by specific streamers.
-func (s BaseQuoteStreamer) StreamQuotes() error {
+func (s *BaseQuoteStreamer) StreamQuotes() error {
 	return fmt.Errorf("[%s] StreamQuotes method not implemented", s.Name)
 }
 
-func (s BaseQuoteStreamer) PublishQuotes(quote PriceQuote) {
-	s.QuotesChan <- quote
-	log.Println("publishing quotes")
+func (s *BaseQuoteStreamer) PublishQuotes(quote PriceQuote) {
 	select {
     case s.QuotesChan <- quote:
         log.Printf("[%s] Published quote: %v", s.Name, quote)
@@ -39,6 +37,6 @@ func (s BaseQuoteStreamer) PublishQuotes(quote PriceQuote) {
     }
 }
 
-func (s BaseQuoteStreamer) Log(format string, template ...interface{}) {
+func (s *BaseQuoteStreamer) Log(format string, template ...interface{}) {
 	log.Printf("["+s.Name+"] "+format, template...)
 }
