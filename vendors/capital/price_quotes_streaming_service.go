@@ -64,10 +64,8 @@ func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 
 		select {
 		case <-s.ctx.Done():
-			log.Println("shutting down quote streaming due to context cancellation")
-			return nil
+			return s.ctx.Err()
 		default:
-
 			_, message, err := con.ReadMessage()
 			if err != nil {
 				return err
@@ -82,7 +80,9 @@ func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 			// Handle the response based on the destination field
 			switch response["destination"] {
 			case "marketData.subscribe":
-				s.handleSubscriptionResponse(response)
+				if err := s.handleSubscriptionResponse(response); err != nil {
+					return err
+				}
 			case "quote":
 				s.handleQuoteUpdateResponse(response)
 			default:
@@ -95,8 +95,19 @@ func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 func (s QuoteStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
 	status := response["status"].(string)
 	if status != "OK" {
-		return fmt.Errorf("subscription failed: %v", response)
+		return fmt.Errorf("subscription error: %v", response)
 	}
+
+	payload := response["payload"].(map[string]interface{})
+	subcriptions := payload["subscriptions"].(map[string]interface{})
+
+	for _, value := range subcriptions {
+		v := value.(string)
+		if strings.Contains(v, "ERROR") {
+			return fmt.Errorf("subscription error: %v", v)
+		}
+	}
+
 	return nil
 }
 

@@ -49,13 +49,12 @@ func (s QuoteStreamer) StreamQuotes() (err error) {
 func (s QuoteStreamer) listen(con *websocket.Conn) (err error) {
 
 	defer con.Close()
-
+	
 	for {
 
 		select {
 		case <-s.ctx.Done():
-			log.Println("shutting down quote streaming due to context cancellation")
-			return nil
+			return s.ctx.Err()
 		default:
 			_, message, err := con.ReadMessage()
 			if err != nil {
