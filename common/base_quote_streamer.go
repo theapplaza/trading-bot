@@ -8,7 +8,7 @@ import (
 
 type BaseQuoteStreamer struct {
 	Name       string
-	QuotesChan chan PriceQuote
+	QuotesChan chan interface{}
 	Ctx        context.Context
 }
 
@@ -16,7 +16,7 @@ func (s *BaseQuoteStreamer) GetName() string {
 	return s.Name
 }
 
-func (s *BaseQuoteStreamer) SetQuotesChannel(c chan PriceQuote) {
+func (s *BaseQuoteStreamer) SetQuotesChannel(c chan interface{}) {
 	s.QuotesChan = c
 }
 
@@ -25,16 +25,18 @@ func (s *BaseQuoteStreamer) StreamQuotes() error {
 	return fmt.Errorf("[%s] StreamQuotes method not implemented", s.Name)
 }
 
-func (s *BaseQuoteStreamer) PublishQuotes(quote PriceQuote) {
+func (s *BaseQuoteStreamer) PublishQuotes(quote interface{}) {
+
+
 	select {
-    case s.QuotesChan <- quote:
-        log.Printf("[%s] Published quote: %v", s.Name, quote)
-    case <-s.Ctx.Done():
-        log.Printf("[%s] Context canceled, stopping publishing", s.Name)
-    default:
+	case s.QuotesChan <- quote:
+		// log.Printf("[%s] Published quote: %v", s.Name, quote)
+	case <-s.Ctx.Done():
+		log.Printf("[%s] Context canceled, stopping publishing", s.Name)
+	default:
 		len := len(s.QuotesChan)
-        log.Printf("[%s] Quote channel is full %v, dropping quote: %v", s.Name,len, quote)
-    }
+		log.Printf("[%s] Quote channel is full %v, dropping quote: %v", s.Name, len, quote)
+	}
 }
 
 func (s *BaseQuoteStreamer) Log(format string, template ...interface{}) {

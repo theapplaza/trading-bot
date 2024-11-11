@@ -12,26 +12,24 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type CapitalStreamer struct {
+type RealtimeStreamer struct {
 	common.BaseQuoteStreamer
 }
 
-func New(ctx context.Context) *CapitalStreamer {
-	return &CapitalStreamer{
-		BaseQuoteStreamer:common.BaseQuoteStreamer{
+func NewRealtimeStreamer(ctx context.Context) *RealtimeStreamer {
+	return &RealtimeStreamer{
+		BaseQuoteStreamer: common.BaseQuoteStreamer{
 			Name: "Capital",
-			Ctx: ctx,
+			Ctx:  ctx,
 		},
 	}
 }
 
-func (s *CapitalStreamer) StreamQuotes() (err error) {
-	
+func (s *RealtimeStreamer) StreamQuotes() (err error) {
+
 	//ensure that authentication is done
-	if activeSession == nil {
-		if err = authenticate(); err != nil {
-			return err
-		}
+	if err = authenticate(); err != nil {
+		return err
 	}
 
 	url := fmt.Sprintf("%s%s", activeSession.StreamingHost, "connect")
@@ -56,7 +54,7 @@ func (s *CapitalStreamer) StreamQuotes() (err error) {
 	return s.listen(con)
 }
 
-func (s *CapitalStreamer) listen(con *websocket.Conn) (err error) {
+func (s *RealtimeStreamer) listen(con *websocket.Conn) (err error) {
 
 	defer con.Close()
 
@@ -92,7 +90,7 @@ func (s *CapitalStreamer) listen(con *websocket.Conn) (err error) {
 	}
 }
 
-func (s *CapitalStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
+func (s *RealtimeStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
 	status := response["status"].(string)
 	if status != "OK" {
 		return fmt.Errorf("subscription error: %v", response)
@@ -111,7 +109,7 @@ func (s *CapitalStreamer) handleSubscriptionResponse(response map[string]interfa
 	return nil
 }
 
-func (s *CapitalStreamer) handleQuoteUpdateResponse(response map[string]interface{}) {
+func (s *RealtimeStreamer) handleQuoteUpdateResponse(response map[string]interface{}) {
 	payload := response["payload"].(map[string]interface{})
 
 	epic := payload["epic"].(string)
@@ -120,6 +118,7 @@ func (s *CapitalStreamer) handleQuoteUpdateResponse(response map[string]interfac
 	// timestamp := payload["timestamp"].(float64)
 
 	quote := common.PriceQuote{
+		Producer: s.GetName(),
 		Price: bid,
 		Symbol: common.Symbol{
 			Name:   epic,

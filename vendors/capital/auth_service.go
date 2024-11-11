@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 )
 
 type session struct {
@@ -15,9 +16,20 @@ type session struct {
 	CurrentAccountId string
 }
 
-var activeSession *session
+var (
+    activeSession *session
+    authOnce      sync.Once
+    authErr       error
+)
 
-func authenticate() (err error) {
+func authenticate() error {
+    authOnce.Do(func() {
+        authErr = doAuthenticate()
+    })
+    return authErr
+}
+
+func doAuthenticate() (err error) {
 
 	req, err := _setupReq()
 	client := &http.Client{}

@@ -16,8 +16,9 @@ func main() {
 	core.ProcessQuotes()
 
 	vendors := []common.QuoteStreamer{
-		twelvedata.New(ctx),
-		capital.New(ctx),
+		twelvedata.NewRealtimeStreamer(ctx),
+		capital.NewOhlcStreamer(ctx),
+		capital.NewRealtimeStreamer(ctx),
 	}
 
 	for _, vendor := range vendors {
