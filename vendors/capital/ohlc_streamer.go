@@ -27,6 +27,10 @@ func NewOhlcStreamer(ctx context.Context) *OhlcStreamer {
 	}
 }
 
+func (s *OhlcStreamer) GetStrategies() []common.SignalStrategy {
+	return nil
+}
+
 func (s *OhlcStreamer) StreamQuotes() (err error) {
 
 	//ensure that authentication is done

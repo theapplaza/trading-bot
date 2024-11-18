@@ -27,6 +27,10 @@ func NewRealtimeStreamer(ctx context.Context) *RealtimeStreamer {
 	}
 }
 
+func (s *RealtimeStreamer) GetStrategies() []common.SignalStrategy {
+	return nil
+}
+
 func (s *RealtimeStreamer) StreamQuotes() (err error) {
 
 	con, _, err := websocket.DefaultDialer.Dial(s.url, nil)

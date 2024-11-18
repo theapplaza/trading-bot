@@ -25,6 +25,10 @@ func NewRealtimeStreamer(ctx context.Context) *RealtimeStreamer {
 	}
 }
 
+func (s *RealtimeStreamer) GetStrategies() []common.SignalStrategy {
+	return nil
+}
+
 func (s *RealtimeStreamer) StreamQuotes() (err error) {
 
 	//ensure that authentication is done

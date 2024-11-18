@@ -8,8 +8,9 @@ import (
 
 var (
 	streamerGroup sync.WaitGroup
-	quoteChannel  = make(chan interface{}, 100) // Buffered channel to avoid blocking
-	dataStore	 = NewDataStore()
+	quoteChannel  = make(chan common.Quote, 100) // Buffered channel to avoid blocking
+	dataStore     = NewDataStore()
+	strategies    = make(map[string]Strategy)
 )
 
 func Inject(streamer common.QuoteStreamer) {
@@ -30,9 +31,9 @@ func ProcessQuotes() {
 		for quote := range quoteChannel {
 			switch q := quote.(type) {
 			case common.PriceQuote:
-				dataStore.AddRealtimeData(q.Producer, q)
+				dataStore.AddData(q.Producer, q)
 			case common.PeriodPriceQuote:
-				dataStore.AddPeriodPriceData(q.Producer, q)
+				dataStore.AddData(q.Producer, q)
 			default:
 				log.Printf("Unknown quote type: %T", quote)
 			}

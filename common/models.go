@@ -1,5 +1,9 @@
 package common
 
+type Quote interface {
+	IsQuote()
+}
+
 type PeriodPriceQuote struct {
 	Producer   string
 	Period     string
@@ -24,11 +28,22 @@ type Symbol struct {
 	Ticker string
 }
 
+func (p PeriodPriceQuote) IsQuote() {}
+func (p PriceQuote) IsQuote()       {}
+
 // QuoteStreamer defines the interface for streaming quotes.
 type QuoteStreamer interface {
-	SetQuotesChannel(chan interface{})
+	SetQuotesChannel(chan Quote)
 	GetName() string
 
 	//Client must implement as this is the try point to the vendor
 	StreamQuotes() error
+	GetStrategies() []SignalStrategy
 }
+
+type SignalStrategy int
+
+const (
+	Rsi SignalStrategy = iota
+	Macd
+)
