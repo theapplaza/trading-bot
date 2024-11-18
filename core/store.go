@@ -1,13 +1,12 @@
 package core
 
 import (
-	"log"
 	"sync"
 	"trading-bot/common"
 )
 
 type VendorData struct {
-	Quotes []common.Quote
+	Quotes map[string][]common.Quote
 }
 
 type DataStore struct {
@@ -25,24 +24,47 @@ func (ds *DataStore) AddVendor(vendorName string) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 	ds.storage[vendorName] = &VendorData{
-		Quotes: []common.Quote{},
-	}
-}
-func (ds *DataStore) AddData(vendorName string, data common.Quote) {
-	ds.mu.Lock()
-	defer ds.mu.Unlock()
-	if v, ok := ds.storage[vendorName]; ok {
-		v.Quotes = append(v.Quotes, data)
-		log.Printf("added realtime data for %s data is now %v", vendorName, v.Quotes)
-
+		Quotes: make(map[string][]common.Quote),
 	}
 }
 
-func (ds *DataStore) GetData(vendorName string) []common.Quote {
+//AddPriceQuote adds a price quote to the data store
+func (ds *DataStore) AddPriceQuote(vendorName string, data common.PriceQuote) {
+	ds.AddData(vendorName, data.Symbol, data)
+}
+
+//AddPeriodPriceQuote adds a period price quote to the data store
+func (ds *DataStore) AddPeriodPriceQuote(vendorName string, data common.PeriodPriceQuote) {
+	ds.AddData(vendorName, data.Symbol, data)
+}
+
+func (ds *DataStore) AddData(vendorName string, symbol common.Symbol, data common.Quote) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 	if v, ok := ds.storage[vendorName]; ok {
-		return v.Quotes
+		v.Quotes[symbol.Name] = append(v.Quotes[symbol.Name], data)
+	}
+}
+
+//Gets data fora single symbol
+func (ds *DataStore) GetData(vendorName string, symbol common.Symbol) []common.Quote {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	if v, ok := ds.storage[vendorName]; ok {
+		return v.Quotes[symbol.Name]
+	}
+	return nil
+}
+
+func (ds *DataStore) GetSymbols(vendorName string) []common.Symbol {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	if v, ok := ds.storage[vendorName]; ok {
+		var symbols []common.Symbol
+		for symbol := range v.Quotes {
+			symbols = append(symbols, common.Symbol{Name: symbol})
+		}
+		return symbols
 	}
 	return nil
 }

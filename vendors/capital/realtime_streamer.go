@@ -26,7 +26,7 @@ func NewRealtimeStreamer(ctx context.Context) *RealtimeStreamer {
 }
 
 func (s *RealtimeStreamer) GetStrategies() []common.SignalStrategy {
-	return nil
+	return []common.SignalStrategy{common.Rsi}
 }
 
 func (s *RealtimeStreamer) StreamQuotes() (err error) {

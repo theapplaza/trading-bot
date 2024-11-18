@@ -4,6 +4,6 @@ type MacdStrategy struct {
 	Name string
 }
 
-func (rsi *MacdStrategy) Pass() bool {
-	return true
+func (rsi *MacdStrategy) Pass() (float64, bool) {
+	return 0, false
 }

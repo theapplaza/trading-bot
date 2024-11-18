@@ -1,5 +1,7 @@
 package core
 
+import "trading-bot/common"
+
 type Strategy interface {
-	Pass() bool
+	Pass(producer string, symbol common.Symbol) (float64, bool)
 }

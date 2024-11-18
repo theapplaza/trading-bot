@@ -6,7 +6,6 @@ import (
 	"trading-bot/core"
 
 	"trading-bot/vendors/capital"
-	"trading-bot/vendors/twelvedata"
 )
 
 func main() {
@@ -16,8 +15,8 @@ func main() {
 	core.ProcessQuotes()
 
 	vendors := []common.QuoteStreamer{
-		twelvedata.NewRealtimeStreamer(ctx),
-		capital.NewOhlcStreamer(ctx),
+		// twelvedata.NewRealtimeStreamer(ctx),
+		// capital.NewOhlcStreamer(ctx),
 		capital.NewRealtimeStreamer(ctx),
 	}
 
