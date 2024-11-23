@@ -132,5 +132,4 @@ func (s *RealtimeStreamer) handleQuoteUpdateResponse(response map[string]interfa
 
 	s.PublishQuotes(quote)
 
-	// log.Printf("Capital: Price update for %s - Bid: %f, Offer: %.2f, Timestamp: %d", epic, bid, ofr, int64(timestamp))
 }

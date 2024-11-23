@@ -33,24 +33,17 @@ func Inject(streamer common.QuoteStreamer) {
 func ProcessQuotes() {
 	go func() {
 		for quote := range quoteChannel {
-			var producer string
-			var symbol common.Symbol
 			switch q := quote.(type) {
 			case common.PriceQuote:
 				dataStore.AddPriceQuote(q.Producer, q)
-				producer = q.Producer
-				symbol = q.Symbol
 			case common.PeriodPriceQuote:
 				dataStore.AddPeriodPriceQuote(q.Producer, q)
-				producer = q.Producer
-				symbol = q.Symbol
 			default:
 				log.Printf("Unknown quote type: %T", quote)
 			}
 
 			if strategy, ok := strategies[common.Rsi]; ok {
-				 value, _ := strategy.Pass(quote); 
-				 log.Printf("RSI value for %s %s is %f", producer, symbol.Name, value)
+				 strategy.Check(quote); 
 			}
 		}
 	}()

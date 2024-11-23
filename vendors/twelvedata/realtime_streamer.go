@@ -110,6 +110,4 @@ func (s *RealtimeStreamer) handleQuoteUpdateResponse(payload map[string]interfac
 		},
 	}
 	s.PublishQuotes(quote)
-
-	// log.Printf("TwelveData: Price update for %s - Price: %f, Timestamp: %d", epic, price, int64(timestamp))
 }

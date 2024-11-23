@@ -1,6 +1,7 @@
 package core
 
 import (
+	"log"
 	"trading-bot/common"
 
 	"github.com/markcheno/go-talib"
@@ -22,7 +23,7 @@ func NewRsiStrategy(period int, bidLevel float64, askLevel float64) *RsiStrategy
 	}
 }
 
-func (rsi *RsiStrategy) Pass(currentQuote common.Quote) (current float64, ok bool) {
+func (rsi *RsiStrategy) Check(currentQuote common.Quote) (current float64, ok bool) {
 
 	data := dataStore.GetData(currentQuote.GetProducer(), currentQuote.GetSymbol())
 	if data == nil {
@@ -42,7 +43,6 @@ func (rsi *RsiStrategy) Pass(currentQuote common.Quote) (current float64, ok boo
 	}
 
 	if len(prices) < rsi.Period {
-		// log.Printf("Not enough data for RSI calculation for %s %s", currentQuote.GetProducer(), currentQuote.GetSymbol().Name)
 		return 0, false
 	}
 
@@ -54,7 +54,8 @@ func (rsi *RsiStrategy) Pass(currentQuote common.Quote) (current float64, ok boo
 	} else {
 		ok = current < rsi.AskSignalLevel 
 	}
+
+	log.Printf("RSI for %s and kind %s: %.2f", currentQuote.GetSymbol().Name, currentQuote.GetQuoteType(), current)
 	
-	// log.Printf("RSI value for %s %s is %f, check status: %t", currentQuote.GetProducer(), currentQuote.GetSymbol().Name, current, ok)
 	return current, ok
 }

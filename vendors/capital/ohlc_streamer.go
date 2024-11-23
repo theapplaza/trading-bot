@@ -177,7 +177,6 @@ func (s *OhlcStreamer) handleQuoteUpdateResponse(response map[string]interface{}
 		},
 		Timestamp: payload["t"].(float64),
 	}
-	s.Log("Capital HOLC: Price update for %s - PriceType: %s, Open: %f, Close: %.2f, Timestamp: %f", quote.Symbol.Name, quote.QuoteType, quote.OpenPrice, quote.ClosePrice, float64(quote.Timestamp))
 
 	s.PublishQuotes(quote)
 }
