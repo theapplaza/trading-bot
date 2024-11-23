@@ -9,42 +9,52 @@ import (
 type RsiStrategy struct {
 	Name   common.SignalStrategy
 	Period int
-	Level  float64
+	BidSignalLevel  float64
+	AskSignalLevel  float64
 }
 
-func NewRsiStrategy(period int, level float64) *RsiStrategy {
+func NewRsiStrategy(period int, bidLevel float64, askLevel float64) *RsiStrategy {
 	return &RsiStrategy{
 		Name:   common.Rsi,
 		Period: period,
-		Level:  level,
+		BidSignalLevel: bidLevel,
+		AskSignalLevel: askLevel,
 	}
 }
 
-func (rsi *RsiStrategy) Pass(vendorName string, symbol common.Symbol) (current float64, ok bool) {
+func (rsi *RsiStrategy) Pass(currentQuote common.Quote) (current float64, ok bool) {
 
-	//compute rsi for each symbol in store
+	data := dataStore.GetData(currentQuote.GetProducer(), currentQuote.GetSymbol())
+	if data == nil {
+		return 0, false
+	}
 
-		data := dataStore.GetData(vendorName, symbol)
-		if data == nil {
-			return 0, false
+	if len(data) < (rsi.Period+1) * 2 {
+		// log.Printf("Not enough data for RSI calculation for %s %s", currentQuote.GetProducer(), currentQuote.GetSymbol().Name)
+		return 0, false
+	}
+
+	var prices []float64
+	for i := len(data) - ((rsi.Period+1)*2); i < len(data); i++ {
+		if currentQuote.GetQuoteType() == data[i].GetQuoteType() {
+			prices = append(prices, data[i].GetPrice())
 		}
+	}
 
-		var closePrices []float64
-		for _, quote := range data {
-			if priceQuote, ok := quote.(common.PriceQuote); ok {
-				closePrices = append(closePrices, priceQuote.Price)
-			}
-		}
+	if len(prices) < rsi.Period {
+		// log.Printf("Not enough data for RSI calculation for %s %s", currentQuote.GetProducer(), currentQuote.GetSymbol().Name)
+		return 0, false
+	}
 
-		if len(closePrices) < rsi.Period+1 {
-			return 0, false
-		}
+	rsiValues := talib.Rsi(prices, rsi.Period)
+    current = rsiValues[len(rsiValues)-1]
 
-		rsiValues := talib.Rsi(closePrices, rsi.Period)
-		current = rsiValues[len(rsiValues)-1]
-
-		//log
-		// log.Printf("RSI for %s: %s: %f", vendorName, symbol.Name, currentRsi)
-		return current, current > rsi.Level
-
+	if currentQuote.GetQuoteType() == "bid" {
+		ok = current > rsi.BidSignalLevel
+	} else {
+		ok = current < rsi.AskSignalLevel 
+	}
+	
+	// log.Printf("RSI value for %s %s is %f, check status: %t", currentQuote.GetProducer(), currentQuote.GetSymbol().Name, current, ok)
+	return current, ok
 }

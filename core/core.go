@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	strategies[common.Rsi] = NewRsiStrategy(14, 70)
+	strategies[common.Rsi] = NewRsiStrategy(14, 70, 30)
 }
 
 func Inject(streamer common.QuoteStreamer) {
@@ -49,9 +49,8 @@ func ProcessQuotes() {
 			}
 
 			if strategy, ok := strategies[common.Rsi]; ok {
-				 if value, ok := strategy.Pass(producer, symbol); ok {
-					log.Printf("RSI strategy passed for %s %s %f", producer, symbol.Name, value)
-				}
+				 value, _ := strategy.Pass(quote); 
+				 log.Printf("RSI value for %s %s is %f", producer, symbol.Name, value)
 			}
 		}
 	}()

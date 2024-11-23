@@ -2,6 +2,10 @@ package common
 
 type Quote interface {
 	IsQuote()
+	GetSymbol() Symbol
+	GetPrice() float64
+	GetQuoteType() string
+	GetProducer() string
 }
 
 type PeriodPriceQuote struct {
@@ -30,6 +34,35 @@ type Symbol struct {
 
 func (p PeriodPriceQuote) IsQuote() {}
 func (p PriceQuote) IsQuote()       {}
+func (p PeriodPriceQuote) GetSymbol() Symbol {
+	return p.Symbol
+}
+func (p PriceQuote) GetSymbol() Symbol {
+	return p.Symbol
+}
+func (p PeriodPriceQuote) GetPrice() float64 {
+	return p.ClosePrice
+}
+func (p PriceQuote) GetPrice() float64 {
+	return p.Price
+}
+func (p PeriodPriceQuote) GetQuoteType() string {
+	return p.QuoteType
+}
+
+//@NOTE: how do we handle realtime quotes?
+func (p PriceQuote) GetQuoteType() string {
+	return "bid"
+}
+
+//get producer
+func (p PeriodPriceQuote) GetProducer() string {
+	return p.Producer
+}
+
+func (p PriceQuote) GetProducer() string {
+	return p.Producer
+}
 
 // QuoteStreamer defines the interface for streaming quotes.
 type QuoteStreamer interface {

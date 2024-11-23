@@ -32,7 +32,7 @@ func (s *RealtimeStreamer) GetStrategies() []common.SignalStrategy {
 func (s *RealtimeStreamer) StreamQuotes() (err error) {
 
 	//ensure that authentication is done
-	if err = authenticate(); err != nil {
+	if err = authenticate(false); err != nil {
 		return err
 	}
 

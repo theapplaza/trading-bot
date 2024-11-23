@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
+	"time"
 )
 
 type session struct {
@@ -22,7 +24,12 @@ var (
     authErr       error
 )
 
-func authenticate() error {
+func authenticate(force bool) error {
+
+	if force {
+		return doAuthenticate()		
+	}
+	
     authOnce.Do(func() {
         authErr = doAuthenticate()
     })
@@ -31,12 +38,27 @@ func authenticate() error {
 
 func doAuthenticate() (err error) {
 
-	req, err := _setupReq()
+	req := _setupReq()
 	client := &http.Client{}
 	response, err := client.Do(req)
-	if err != nil || response.StatusCode != 200 {
-		err = fmt.Errorf("cannot authenticate %s %s", err, response.Status)
+	if err != nil {
+		err = fmt.Errorf("cannot authenticate %s %s", err, err)
+		
+		//check if it is timeout
+		if strings.Contains(err.Error(), "timeout") {
+			time.Sleep(30 * time.Second)
+			return doAuthenticate()
+		}
 		return
+	}
+
+	if response == nil {
+		err = fmt.Errorf("cannot authenticate %s %s", err, err)
+		return
+	}
+
+	if response.StatusCode != http.StatusOK {
+		
 	}
 	defer response.Body.Close()
 
@@ -45,17 +67,13 @@ func doAuthenticate() (err error) {
 	return
 }
 
-func _setupReq() (req *http.Request, err error) {
+func _setupReq() (req *http.Request) {
 	reqBody, _ := json.Marshal(map[string]string{
 		"identifier": activeConfig.ApiKeyUser,
 		"password":   activeConfig.ApiKeyPassword,
 	})
 
-	req, err = http.NewRequest("POST", fmt.Sprintf("%s/session", activeConfig.ApiBaseUrl), bytes.NewBuffer(reqBody))
-	if err != nil {
-		return
-	}
-
+	req, _ = http.NewRequest("POST", fmt.Sprintf("%s/session", activeConfig.ApiBaseUrl), bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Add("X-CAP-API-KEY", activeConfig.ApiKey)
 	return

@@ -16,8 +16,8 @@ func main() {
 
 	vendors := []common.QuoteStreamer{
 		// twelvedata.NewRealtimeStreamer(ctx),
-		// capital.NewOhlcStreamer(ctx),
-		capital.NewRealtimeStreamer(ctx),
+		capital.NewOhlcStreamer(ctx),
+		// capital.NewRealtimeStreamer(ctx),
 	}
 
 	for _, vendor := range vendors {

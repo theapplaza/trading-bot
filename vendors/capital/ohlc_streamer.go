@@ -3,10 +3,12 @@ package capital
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"strings"
+	"time"
 	"trading-bot/common"
 
 	"github.com/gorilla/websocket"
@@ -33,15 +35,35 @@ func (s *OhlcStreamer) GetStrategies() []common.SignalStrategy {
 
 func (s *OhlcStreamer) StreamQuotes() (err error) {
 
-	//ensure that authentication is done
-	if err = authenticate(); err != nil {
-		return err
+	for {
+		if err = s.connectAndStream(); err != nil {
+			if errors.Is(err, ErrRecoverable) {
+				s.Log("Recoverable error connecting to streamer:", err)
+				time.Sleep(30 * time.Second)
+			} else {
+				return err
+			}
+		} else {
+			break
+		}
 	}
+	return nil
+
+}
+
+func (s *OhlcStreamer) connectAndStream() (err error) {
+	//ensure that authentication is done
+	if err = authenticate(true); err != nil {
+		return fmt.Errorf("%w: %v", ErrNonRecoverable, err)
+	}
+
+	//populate the base starting values
+	s.SetHistoricalData()
 
 	url := fmt.Sprintf("%s%s", activeSession.StreamingHost, "connect")
 	con, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrNonRecoverable, err)
 	}
 	defer con.Close()
 
@@ -64,38 +86,57 @@ func (s *OhlcStreamer) StreamQuotes() (err error) {
 
 func (s *OhlcStreamer) listen(con *websocket.Conn) (err error) {
 
-	defer con.Close()
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 
 	for {
 
 		select {
 		case <-s.Ctx.Done():
 			return s.Ctx.Err()
+		case <-ticker.C:
+			if err := con.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Println("Error sending ping:", err)
+				return fmt.Errorf("%w: %v", ErrRecoverable, err)
+			}
 		default:
 			_, message, err := con.ReadMessage()
 			if err != nil {
-				return err
+				s.Log("Error reading message:", err)
+				// if websocket.IsCloseError(err) {
+				return fmt.Errorf("%w: %v", ErrRecoverable, err)
+				// }
+				// return fmt.Errorf("%w: %v", ErrNonRecoverable, err)
 			}
 
-			var response map[string]interface{}
-			if err := json.Unmarshal(message, &response); err != nil {
-				log.Println("Error unmarshalling response:", err)
-				continue
-			}
-
-			// Handle the response based on the destination field
-			switch response["destination"] {
-			case "OHLCMarketData.subscribe":
-				if err := s.handleSubscriptionResponse(response); err != nil {
-					return err
-				}
-			case "ohlc.event":
-				s.handleQuoteUpdateResponse(response)
-			default:
-				return fmt.Errorf("unhandled message: %v", response)
+			if err := s.processMessage(message); err != nil {
+				s.Log("Error processing message:", err)
 			}
 		}
 	}
+}
+
+// implement processMessage
+func (s *OhlcStreamer) processMessage(message []byte) error {
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(message, &response); err != nil {
+		s.Log("Error unmarshalling response:", err)
+		return nil
+	}
+
+	switch response["destination"] {
+	case "OHLCMarketData.subscribe":
+		if err := s.handleSubscriptionResponse(response); err != nil {
+			return err
+		}
+	case "ohlc.event":
+		s.handleQuoteUpdateResponse(response)
+	default:
+		return fmt.Errorf("unhandled message: %v", response)
+	}
+
+	return nil
 }
 
 func (s *OhlcStreamer) handleSubscriptionResponse(response map[string]interface{}) error {
@@ -113,6 +154,8 @@ func (s *OhlcStreamer) handleSubscriptionResponse(response map[string]interface{
 			return fmt.Errorf("subscription error: %v", v)
 		}
 	}
+
+	s.Log("Subscription successful")
 
 	return nil
 }
@@ -134,8 +177,21 @@ func (s *OhlcStreamer) handleQuoteUpdateResponse(response map[string]interface{}
 		},
 		Timestamp: payload["t"].(float64),
 	}
+	s.Log("Capital HOLC: Price update for %s - PriceType: %s, Open: %f, Close: %.2f, Timestamp: %f", quote.Symbol.Name, quote.QuoteType, quote.OpenPrice, quote.ClosePrice, float64(quote.Timestamp))
 
 	s.PublishQuotes(quote)
+}
 
-	// log.Printf("Capital HOLC: Price update for %s - PriceType: %s, Open: %f, Close: %.2f, Timestamp: %f", quote.Symbol.Name, quote.QuoteType, quote.OpenPrice, quote.ClosePrice, float64(quote.Timestamp))
+func (s *OhlcStreamer) SetHistoricalData() error {
+
+	instruments := strings.Split(activeConfig.Instruments, ",")
+
+	for _, instrument := range instruments {
+		symbolQuotes, _ := getPriceHistory(s.GetName(), instrument, 15, s.period)
+		for _, quote := range symbolQuotes {
+			s.PublishQuotes(quote)
+		}
+	}
+
+	return nil
 }
