@@ -4,14 +4,14 @@ type Quote interface {
 	IsQuote()
 	GetSymbol() Symbol
 	GetPrice() float64
-	GetQuoteType() string
+	GetQuoteType() PriceQuoteType
 	GetProducer() string
 }
 
 type PeriodPriceQuote struct {
 	Producer   string
 	Period     string
-	QuoteType  string
+	QuoteType  PriceQuoteType
 	HighPrice  float64
 	LowPrice   float64
 	OpenPrice  float64
@@ -46,13 +46,13 @@ func (p PeriodPriceQuote) GetPrice() float64 {
 func (p PriceQuote) GetPrice() float64 {
 	return p.Price
 }
-func (p PeriodPriceQuote) GetQuoteType() string {
+func (p PeriodPriceQuote) GetQuoteType() PriceQuoteType {
 	return p.QuoteType
 }
 
 //@NOTE: how do we handle realtime quotes?
-func (p PriceQuote) GetQuoteType() string {
-	return "bid"
+func (p PriceQuote) GetQuoteType() PriceQuoteType {
+	return PriceQuoteTypeBid
 }
 
 //get producer
@@ -73,10 +73,3 @@ type QuoteStreamer interface {
 	StreamQuotes() error
 	GetStrategies() []SignalStrategy
 }
-
-type SignalStrategy int
-
-const (
-	Rsi SignalStrategy = iota
-	Macd
-)

@@ -166,7 +166,7 @@ func (s *OhlcStreamer) handleQuoteUpdateResponse(response map[string]interface{}
 	quote := common.PeriodPriceQuote{
 		Producer:   s.GetName(),
 		Period:     s.period,
-		QuoteType:  payload["priceType"].(string),
+		QuoteType:  common.PriceQuoteType(payload["priceType"].(string)),
 		HighPrice:  payload["h"].(float64),
 		LowPrice:   payload["l"].(float64),
 		OpenPrice:  payload["o"].(float64),

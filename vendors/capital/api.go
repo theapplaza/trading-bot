@@ -56,7 +56,7 @@ func getPriceHistory(producer string, symbol string, period int, resolution stri
 		bidQuote := common.PeriodPriceQuote{
 			Producer:   producer,
 			Period:     resolution,
-			QuoteType:  "bid",
+			QuoteType:  common.PriceQuoteTypeBid,
 			HighPrice:  price.HighPrice.Bid,
 			LowPrice:   price.LowPrice.Bid,
 			OpenPrice:  price.OpenPrice.Bid,
@@ -71,7 +71,7 @@ func getPriceHistory(producer string, symbol string, period int, resolution stri
 		askQuote := common.PeriodPriceQuote{
 			Producer:   producer,
 			Period:     resolution,
-			QuoteType:  "ask",
+			QuoteType:  common.PriceQuoteTypeAsk,
 			HighPrice:  price.HighPrice.Ask,
 			LowPrice:   price.LowPrice.Ask,
 			OpenPrice:  price.OpenPrice.Ask,

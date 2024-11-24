@@ -49,7 +49,7 @@ func (rsi *RsiStrategy) Check(currentQuote common.Quote) (current float64, ok bo
 	rsiValues := talib.Rsi(prices, rsi.Period)
     current = rsiValues[len(rsiValues)-1]
 
-	if currentQuote.GetQuoteType() == "bid" {
+	if currentQuote.GetQuoteType() == common.PriceQuoteTypeBid {
 		ok = current > rsi.BidSignalLevel
 	} else {
 		ok = current < rsi.AskSignalLevel 
