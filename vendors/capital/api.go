@@ -53,9 +53,9 @@ func getPriceHistory(producer string, symbol string, period int, resolution stri
 			return nil, fmt.Errorf("error parsing timestamp: %v", err)
 		}
 
-		bidQuote := common.PeriodPriceQuote{
+		bidQuote := common.OhlcPriceQuote{
 			Producer:   producer,
-			Period:     resolution,
+			Timeframe:     common.Timeframe(resolution),
 			QuoteType:  common.PriceQuoteTypeBid,
 			HighPrice:  price.HighPrice.Bid,
 			LowPrice:   price.LowPrice.Bid,
@@ -68,9 +68,9 @@ func getPriceHistory(producer string, symbol string, period int, resolution stri
 			Timestamp: float64(timestamp.Unix()),
 		}
 
-		askQuote := common.PeriodPriceQuote{
+		askQuote := common.OhlcPriceQuote{
 			Producer:   producer,
-			Period:     resolution,
+			Timeframe:     common.Timeframe(resolution),
 			QuoteType:  common.PriceQuoteTypeAsk,
 			HighPrice:  price.HighPrice.Ask,
 			LowPrice:   price.LowPrice.Ask,

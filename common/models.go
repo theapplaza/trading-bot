@@ -8,9 +8,14 @@ type Quote interface {
 	GetProducer() string
 }
 
-type PeriodPriceQuote struct {
+type Api interface {
+	GetPriceHistory(symbol string, resolution int, timeframe Timeframe) ([]Quote, error)
+	CreateOrder(symbol string, price float64, quantity float64, side OrderSide) error
+}
+
+type OhlcPriceQuote struct {
 	Producer   string
-	Period     string
+	Timeframe     Timeframe
 	QuoteType  PriceQuoteType
 	HighPrice  float64
 	LowPrice   float64
@@ -32,21 +37,21 @@ type Symbol struct {
 	Ticker string
 }
 
-func (p PeriodPriceQuote) IsQuote() {}
+func (p OhlcPriceQuote) IsQuote() {}
 func (p PriceQuote) IsQuote()       {}
-func (p PeriodPriceQuote) GetSymbol() Symbol {
+func (p OhlcPriceQuote) GetSymbol() Symbol {
 	return p.Symbol
 }
 func (p PriceQuote) GetSymbol() Symbol {
 	return p.Symbol
 }
-func (p PeriodPriceQuote) GetPrice() float64 {
+func (p OhlcPriceQuote) GetPrice() float64 {
 	return p.ClosePrice
 }
 func (p PriceQuote) GetPrice() float64 {
 	return p.Price
 }
-func (p PeriodPriceQuote) GetQuoteType() PriceQuoteType {
+func (p OhlcPriceQuote) GetQuoteType() PriceQuoteType {
 	return p.QuoteType
 }
 
@@ -56,7 +61,7 @@ func (p PriceQuote) GetQuoteType() PriceQuoteType {
 }
 
 //get producer
-func (p PeriodPriceQuote) GetProducer() string {
+func (p OhlcPriceQuote) GetProducer() string {
 	return p.Producer
 }
 

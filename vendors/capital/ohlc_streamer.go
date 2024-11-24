@@ -16,16 +16,16 @@ import (
 
 type OhlcStreamer struct {
 	common.BaseQuoteStreamer
-	period string
+	common.Timeframe
 }
 
 func NewOhlcStreamer(ctx context.Context) *OhlcStreamer {
 	return &OhlcStreamer{
-		BaseQuoteStreamer: common.BaseQuoteStreamer{
+		common.BaseQuoteStreamer{
 			Name: "Capital OHLC",
 			Ctx:  ctx,
 		},
-		period: "MINUTE",
+		common.OneMinute,
 	}
 }
 
@@ -48,7 +48,6 @@ func (s *OhlcStreamer) StreamQuotes() (err error) {
 		}
 	}
 	return nil
-
 }
 
 func (s *OhlcStreamer) connectAndStream() (err error) {
@@ -75,7 +74,7 @@ func (s *OhlcStreamer) connectAndStream() (err error) {
 		"securityToken": activeSession.securitytoken,
 		"payload": map[string]interface{}{
 			"epics":       strings.Split(activeConfig.Instruments, ","),
-			"resolutions": []string{s.period},
+			"resolutions": []string{string(s.Timeframe)},
 			"type":        "classic",
 		},
 	}
@@ -163,9 +162,9 @@ func (s *OhlcStreamer) handleSubscriptionResponse(response map[string]interface{
 func (s *OhlcStreamer) handleQuoteUpdateResponse(response map[string]interface{}) {
 	payload := response["payload"].(map[string]interface{})
 
-	quote := common.PeriodPriceQuote{
+	quote := common.OhlcPriceQuote{
 		Producer:   s.GetName(),
-		Period:     s.period,
+		Timeframe:  s.Timeframe,
 		QuoteType:  common.PriceQuoteType(payload["priceType"].(string)),
 		HighPrice:  payload["h"].(float64),
 		LowPrice:   payload["l"].(float64),
@@ -186,7 +185,7 @@ func (s *OhlcStreamer) SetHistoricalData() error {
 	instruments := strings.Split(activeConfig.Instruments, ",")
 
 	for _, instrument := range instruments {
-		symbolQuotes, _ := getPriceHistory(s.GetName(), instrument, 15, s.period)
+		symbolQuotes, _ := getPriceHistory(s.GetName(), instrument, 15, string(s.Timeframe))
 		for _, quote := range symbolQuotes {
 			s.PublishQuotes(quote)
 		}

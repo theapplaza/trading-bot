@@ -33,8 +33,8 @@ func (ds *DataStore) AddPriceQuote(vendorName string, data common.PriceQuote) {
 	ds.AddData(vendorName, data.Symbol, data)
 }
 
-//AddPeriodPriceQuote adds a period price quote to the data store
-func (ds *DataStore) AddPeriodPriceQuote(vendorName string, data common.PeriodPriceQuote) {
+//AddOhlcPriceQuote adds a period price quote to the data store
+func (ds *DataStore) AddOhlcPriceQuote(vendorName string, data common.OhlcPriceQuote) {
 	ds.AddData(vendorName, data.Symbol, data)
 }
 

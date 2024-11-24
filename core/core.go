@@ -36,8 +36,8 @@ func ProcessQuotes() {
 			switch q := quote.(type) {
 			case common.PriceQuote:
 				dataStore.AddPriceQuote(q.Producer, q)
-			case common.PeriodPriceQuote:
-				dataStore.AddPeriodPriceQuote(q.Producer, q)
+			case common.OhlcPriceQuote:
+				dataStore.AddOhlcPriceQuote(q.Producer, q)
 			default:
 				log.Printf("Unknown quote type: %T", quote)
 			}
