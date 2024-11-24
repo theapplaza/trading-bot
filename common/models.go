@@ -9,7 +9,7 @@ type Quote interface {
 }
 
 type Api interface {
-	GetPriceHistory(symbol string, resolution int, timeframe Timeframe) ([]Quote, error)
+	GetPriceHistory(producer string, symbol string, count int, timeframe Timeframe) ([]Quote, error)
 	CreateOrder(symbol string, price float64, quantity float64, side OrderSide) error
 }
 
@@ -35,6 +35,12 @@ type PriceQuote struct {
 type Symbol struct {
 	Name   string
 	Ticker string
+}
+
+type Position struct {
+	Symbol   Symbol
+	Quantity float64
+	Side     OrderSide
 }
 
 func (p OhlcPriceQuote) IsQuote() {}
@@ -77,4 +83,5 @@ type QuoteStreamer interface {
 	//Client must implement as this is the try point to the vendor
 	StreamQuotes() error
 	GetStrategies() []SignalStrategy
+	OpenPosition(Quote) error
 }

@@ -36,3 +36,11 @@ const (
 	Buy  OrderSide = "BUY"
 	Sell OrderSide = "SELL"
 )
+
+type OrderType string
+const (
+	// Market OrderType = "MARKET"
+	Limit OrderType = "LIMIT"
+	Stop OrderType = "STOP"
+	// StopLimit OrderType = "STOP_LIMIT"
+)

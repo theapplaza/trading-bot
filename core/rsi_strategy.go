@@ -56,6 +56,5 @@ func (rsi *RsiStrategy) Check(currentQuote common.Quote) (current float64, ok bo
 	}
 
 	log.Printf("RSI for %s and kind %s: %.2f", currentQuote.GetSymbol().Name, currentQuote.GetQuoteType(), current)
-	
 	return current, ok
 }

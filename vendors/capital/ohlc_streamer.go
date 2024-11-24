@@ -19,7 +19,10 @@ type OhlcStreamer struct {
 	common.Timeframe
 }
 
+var api *CapitalApi 
+
 func NewOhlcStreamer(ctx context.Context) *OhlcStreamer {
+	api = NewCapitalApi()
 	return &OhlcStreamer{
 		common.BaseQuoteStreamer{
 			Name: "Capital OHLC",
@@ -185,11 +188,42 @@ func (s *OhlcStreamer) SetHistoricalData() error {
 	instruments := strings.Split(activeConfig.Instruments, ",")
 
 	for _, instrument := range instruments {
-		symbolQuotes, _ := getPriceHistory(s.GetName(), instrument, 15, string(s.Timeframe))
+		symbolQuotes, _ := api.getPriceHistory(s.GetName(), instrument, 15, s.Timeframe)
 		for _, quote := range symbolQuotes {
 			s.PublishQuotes(quote)
 		}
 	}
 
 	return nil
+}
+
+/**
+ * @TODO: Abstract the open position logic to the common package like PublishQuotes
+ */
+func (s *OhlcStreamer) OpenPosition(q common.Quote) error {
+
+	var side common.OrderSide
+	if q.GetQuoteType() == common.PriceQuoteTypeBid {
+		side = common.Buy
+	} else {
+		side = common.Sell
+	}
+	
+	//check if we already have an open position in that dreiction
+	positions, err := api.listPositions(q.GetSymbol())
+	if err != nil {
+		return fmt.Errorf("error getting positions: %v", err)
+	}
+
+	/**
+	 * PS: We are only allowing one open trade at a time, we need to manually close the trade before opening another
+	 * before opening another trade.
+	 * This is strictly for testing purposes
+	 */
+	
+	if len(positions) > 0 {
+		return fmt.Errorf("position already open for %s", q.GetSymbol().Name)
+	}
+
+	return api.openPosition(q.GetSymbol().Name, 0.01, side)
 }

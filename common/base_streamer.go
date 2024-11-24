@@ -25,6 +25,11 @@ func (s *BaseQuoteStreamer) StreamQuotes() error {
 	return fmt.Errorf("[%s] StreamQuotes method not implemented", s.Name)
 }
 
+//open position
+func (s *BaseQuoteStreamer) OpenPosition(Quote) error {
+	return fmt.Errorf("[%s] openPosition method not implemented", s.Name)
+}
+
 func (s *BaseQuoteStreamer) PublishQuotes(quote Quote) {
 
 
